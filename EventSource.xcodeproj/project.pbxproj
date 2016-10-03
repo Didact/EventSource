@@ -12,6 +12,7 @@
 		8F7BEEC41DA2C65D00CBA69E /* Socket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F7BEEC01DA2C65D00CBA69E /* Socket.swift */; };
 		8F7BEEC51DA2C65D00CBA69E /* SocketProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F7BEEC11DA2C65D00CBA69E /* SocketProtocols.swift */; };
 		8F7BEEC61DA2C65D00CBA69E /* SocketUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F7BEEC21DA2C65D00CBA69E /* SocketUtils.swift */; };
+		8F7BEEC81DA2C69500CBA69E /* EventSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F7BEEC71DA2C69500CBA69E /* EventSource.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -22,6 +23,7 @@
 		8F7BEEC01DA2C65D00CBA69E /* Socket.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Socket.swift; path = Dependencies/BlueSocket/Socket.swift; sourceTree = "<group>"; };
 		8F7BEEC11DA2C65D00CBA69E /* SocketProtocols.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SocketProtocols.swift; path = Dependencies/BlueSocket/SocketProtocols.swift; sourceTree = "<group>"; };
 		8F7BEEC21DA2C65D00CBA69E /* SocketUtils.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SocketUtils.swift; path = Dependencies/BlueSocket/SocketUtils.swift; sourceTree = "<group>"; };
+		8F7BEEC71DA2C69500CBA69E /* EventSource.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EventSource.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,6 +59,7 @@
 			children = (
 				8F7BEEB51DA2C52E00CBA69E /* EventSource.h */,
 				8F7BEEB61DA2C52E00CBA69E /* Info.plist */,
+				8F7BEEC71DA2C69500CBA69E /* EventSource.swift */,
 			);
 			path = EventSource;
 			sourceTree = "<group>";
@@ -163,6 +166,7 @@
 				8F7BEEC61DA2C65D00CBA69E /* SocketUtils.swift in Sources */,
 				8F7BEEC51DA2C65D00CBA69E /* SocketProtocols.swift in Sources */,
 				8F7BEEC41DA2C65D00CBA69E /* Socket.swift in Sources */,
+				8F7BEEC81DA2C69500CBA69E /* EventSource.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
