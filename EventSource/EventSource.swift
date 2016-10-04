@@ -104,25 +104,25 @@ public class _EventSource {
                 guard let newData = try socket.readString() else {
                     continue
                 }
-                
-                let terminator = "\n\n\n"
-                
+                            
                 buffer.append(newData)
-                let parts = buffer.components(separatedBy: terminator)
-                guard parts.count > 0 else {
-                    continue
+                
+                let records: ArraySlice<String>
+                let components = buffer.components(separatedBy: "\n\n")
+
+                if !buffer.hasSuffix("\n\n") {
+                    records = components.dropLast()
+                    buffer = components.last!
                 }
-                if !buffer.hasSuffix(terminator)  {
-                    buffer = parts.last ?? ""
+                else {
+                    // there will be a last index if we have a suffix of \n\n
+                    records = components[0..<components.indices.last!]
                 }
-                let events = parts.flatMap(parseEvent)
-                for event in events {
-                    if let m = self.onMessage {
-                        DispatchQueue.global(qos: .utility).async {
-                            m(event)
-                        }
-                    }
+                
+                for record in records {
+                    // process
                 }
+                
             }
             catch let e {
                 self.onError?(e)
