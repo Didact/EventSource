@@ -12,6 +12,10 @@ struct Event {
     let id: String?
     let event: String?
     let data: String?
+    
+    func appending(other: Event) -> Event {
+        return Event(id: other.id, event: (self.event ?? "") + (other.event ?? ""), data: (self.data ?? "") + (other.data ?? ""))
+    }
 }
 
 extension _EventSource {
@@ -22,7 +26,7 @@ extension _EventSource {
     }
 }
 
-public struct _EventSource {
+public class _EventSource {
     let url: URL
     var readyState: State
     let withCredentials: Bool
@@ -49,10 +53,11 @@ public struct _EventSource {
         try socket = Socket.create()
     }
     
-    public mutating func open() throws {
+    public func open() throws {
         guard let host = self.url.host, let port = self.url.port else {
             throw NSError()
         }
+        self.readyState = .connecting
         try socket.connect(to: host, port: Int32(port))
         print(url.path)
         let path: String
@@ -72,10 +77,60 @@ public struct _EventSource {
             throw NSError()
         }
         let header = string.substring(to: headerEnd.lowerBound)
+        
+        let fields = header.components(separatedBy: .newlines)
+        guard fields.first?.lowercased().contains("200 ok") ?? false else {
+            throw NSError()
+        }
+        
+        guard fields.map({$0.lowercased()}).contains("content-type: text/event-stream") else {
+            throw NSError()
+        }
+        
         buffer = string.substring(from: headerEnd.upperBound)
+        DispatchQueue.global(qos: .utility).async {
+            self.runLoop()
+        }
+        self.readyState = .open
     }
     
-    mutating func runLoop() {
-        
+    func close() {
+        self.readyState = .closed
+    }
+    
+    func runLoop() {
+        while readyState == .open {
+            do {
+                guard let newData = try socket.readString() else {
+                    continue
+                }
+                
+                let terminator = "\n\n\n"
+                
+                buffer.append(newData)
+                let parts = buffer.components(separatedBy: terminator)
+                guard parts.count > 0 else {
+                    continue
+                }
+                if !buffer.hasSuffix(terminator)  {
+                    buffer = parts.last ?? ""
+                }
+                let events = parts.flatMap(parseEvent)
+                for event in events {
+                    if let m = self.onMessage {
+                        DispatchQueue.global(qos: .utility).async {
+                            m(event)
+                        }
+                    }
+                }
+            }
+            catch let e {
+                self.onError?(e)
+            }
+        }
+    }
+    
+    func parseEvent(_ text: String) -> Event? {
+        return nil
     }
 }
