@@ -29,11 +29,13 @@ public struct _EventSource {
     var lastID: String?
     var reconnectTime: DispatchTimeInterval
     
-    var onOpen: ((Void) -> Void)?
     var onMessage: ((Event) -> Void)?
     var onError: ((Error) -> Void)?
     
     private let socket: Socket
+    
+    //TODO: See if a switch to Data is worth it
+    private var buffer: String = ""
     
     public init(url: URL) throws {
         guard url.host != nil, url.port != nil else {
@@ -65,6 +67,12 @@ public struct _EventSource {
         guard let string = try socket.readString() else {
             throw NSError()
         }
+        
+        guard let headerEnd = string.range(of: "\r\n\r\n") else {
+            throw NSError()
+        }
+        let header = string.substring(to: headerEnd.lowerBound)
+        buffer = string.substring(from: headerEnd.upperBound)
     }
     
     mutating func runLoop() {
