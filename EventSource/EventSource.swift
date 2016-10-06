@@ -12,24 +12,19 @@ public struct Event {
     let id: String?
     let event: String?
     let data: String?
-    
-    func appending(other: Event) -> Event {
-        return Event(id: other.id, event: (self.event ?? "") + (other.event ?? ""), data: (self.data ?? "") + (other.data ?? ""))
-    }
 }
 
-public extension _EventSource {
-    enum State: Int {
+public extension EventSource {
+    public enum State: Int {
         case connecting
         case open
         case closed
     }
 }
 
-public class _EventSource {
+public class EventSource {
     let url: URL
     var readyState: State
-    let withCredentials: Bool
     var lastID: String?
     var reconnectTime: DispatchTimeInterval
     
@@ -47,7 +42,6 @@ public class _EventSource {
         }
         self.url = url
         readyState = .closed
-        withCredentials = false
         reconnectTime = .seconds(5)
         
         try socket = Socket.create()
@@ -93,25 +87,24 @@ public class _EventSource {
             self.runLoop()
        // }
     }
-    
-    func close() {
+
+    public func close() {
+	    self.socket.close()
         self.readyState = .closed
     }
     
     func runLoop() {
         while readyState == .open {
-            do {
-                do {
-                guard let newData = try socket.readString() else {
-                    continue
-                }
-                    
-                    buffer.append(newData)
-                }
-                catch let e {
-                    print(e)
-                    print("whoops")
-                }
+		do {
+			guard let newData = try socket.readString() else {
+			    continue
+			}
+			    
+			    buffer.append(newData)
+			}
+			catch let e {
+				self.onError?(e)
+			}
                 
                 let records: ArraySlice<String>
                 let components = buffer.components(separatedBy: "\n\n")
@@ -123,9 +116,24 @@ public class _EventSource {
                 else {
                     records = components[0..<components.endIndex]
                 }
-                
-                
-                for record in records {
+
+		if let m = self.onMessage {
+
+			let events = records.flatMap(parse(from:))
+			
+			for event in events {
+				DispatchQueue.global(qos: .utility).async {
+					m(e)
+				}
+			}	
+		}
+
+
+            }
+        }
+    }
+
+    private func parse(from record: String) -> Event? {
                     
                     var id: String?
                     var event: String?
@@ -159,22 +167,5 @@ public class _EventSource {
                         }
                     }
                     
-                    let e = Event(id: id, event: event, data: data)
-                    if let m = self.onMessage {
-                        DispatchQueue.global(qos: .utility).async  {
-                            m(e)
-                        }
-                    }
-                }
-                
-            }
-            catch let e {
-                self.onError?(e)
-            }
-        }
-    }
-    
-    func parseEvent(_ text: String) -> Event? {
-        return nil
     }
 }
