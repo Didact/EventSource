@@ -83,9 +83,9 @@ public class EventSource {
         
         buffer = string.substring(from: headerEnd.upperBound)
         self.readyState = .open
-      //  DispatchQueue.global(qos: .utility).async {
+        DispatchQueue.global(qos: .utility).async {
             self.runLoop()
-       // }
+        }
     }
 
     public func close() {
@@ -100,11 +100,11 @@ public class EventSource {
 			    continue
 			}
 			    
-			    buffer.append(newData)
-			}
-			catch let e {
-				self.onError?(e)
-			}
+		    buffer.append(newData)
+		}
+		catch let e {
+			self.onError?(e)
+		}
                 
                 let records: ArraySlice<String>
                 let components = buffer.components(separatedBy: "\n\n")
@@ -128,44 +128,50 @@ public class EventSource {
 			}	
 		}
 
-
             }
         }
     }
 
     private func parse(from record: String) -> Event? {
-                    
-                    var id: String?
-                    var event: String?
-                    var data: String?
-                    
-                    let lines = record.components(separatedBy: .newlines).map({$0.trimmingCharacters(in: .whitespacesAndNewlines)}).filter({$0 != ""})
-                    for line in lines {
-                        
-                        if line.hasPrefix(":") {
-                            continue
-                        }
-                        
-                        if line.hasPrefix("id:") {
-                            id = line[line.index(line.startIndex, offsetBy: 3)..<line.endIndex]
-                            self.lastID = record
-                        }
-                        
-                        if line.hasPrefix("event:") {
-                            event = (event ?? "") + line[line.index(line.startIndex, offsetBy: 6)..<line.endIndex].trimmingCharacters(in: .whitespaces)
-                        }
-                        
-                        if line.hasPrefix("data:") {
-                            data = (data ?? "") + line[record.index(line.startIndex, offsetBy: 5)..<line.endIndex].trimmingCharacters(in: .whitespaces)
-                        }
-                        
-                        if line.hasPrefix("retry:") {
-                            guard let i = Int(line[line.index(line.startIndex, offsetBy: 6)..<line.endIndex].trimmingCharacters(in: .whitespaces)) else {
-                                continue
-                            }
-                            self.reconnectTime = .milliseconds(i)
-                        }
-                    }
-                    
+	    
+	    var id: String?
+	    var event: String?
+	    var data: String?
+	    
+	    let lines = record.components(separatedBy: .newlines).map({$0.trimmingCharacters(in: .whitespacesAndNewlines)}).filter({$0 != ""})
+
+	    guard lines.count != 0 else {
+		    return nil
+	    }
+
+	    for line in lines {
+		
+		if line.hasPrefix(":") {
+		    continue
+		}
+		
+		if line.hasPrefix("id:") {
+		    id = line[line.index(line.startIndex, offsetBy: 3)..<line.endIndex]
+		    self.lastID = record
+		}
+		
+		if line.hasPrefix("event:") {
+		    event = (event ?? "") + line[line.index(line.startIndex, offsetBy: 6)..<line.endIndex].trimmingCharacters(in: .whitespaces)
+		}
+		
+		if line.hasPrefix("data:") {
+		    data = (data ?? "") + line[record.index(line.startIndex, offsetBy: 5)..<line.endIndex].trimmingCharacters(in: .whitespaces)
+		}
+		
+		if line.hasPrefix("retry:") {
+		    guard let i = Int(line[line.index(line.startIndex, offsetBy: 6)..<line.endIndex].trimmingCharacters(in: .whitespaces)) else {
+			continue
+		    }
+		    self.reconnectTime = .milliseconds(i)
+		}
+	    }
+
+	    return Event(id: id, event: event, data: data)
+	    
     }
 }
