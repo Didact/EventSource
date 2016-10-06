@@ -83,9 +83,9 @@ public class EventSource {
         
         buffer = string.substring(from: headerEnd.upperBound)
         self.readyState = .open
-        //DispatchQueue.global(qos: .utility).async {
+        DispatchQueue.global(qos: .utility).async {
             self.runLoop()
-        //}
+        }
     }
     
     public func close() {
