@@ -38,7 +38,7 @@ public class EventSource {
     
     public init(url: URL) throws {
         guard url.host != nil, url.port != nil else {
-             throw NSError()
+            throw NSError()
         }
         self.url = url
         readyState = .closed
@@ -83,95 +83,100 @@ public class EventSource {
         
         buffer = string.substring(from: headerEnd.upperBound)
         self.readyState = .open
-        DispatchQueue.global(qos: .utility).async {
+        //DispatchQueue.global(qos: .utility).async {
             self.runLoop()
-        }
+        //}
     }
-
+    
     public func close() {
-	    self.socket.close()
+        self.socket.close()
         self.readyState = .closed
     }
     
     func runLoop() {
         while readyState == .open {
-		do {
-			guard let newData = try socket.readString() else {
-			    continue
-			}
-			    
-		    buffer.append(newData)
-		}
-		catch let e {
-			self.onError?(e)
-		}
+            do {
+                guard let newData = try socket.readString() else {
+                    continue
+                }
                 
-                let records: ArraySlice<String>
-                let components = buffer.components(separatedBy: "\n\n")
-
-                if !buffer.hasSuffix("\n\n") {
-                    records = components.dropLast()
-                    buffer = components.last!
-                }
-                else {
-                    records = components[0..<components.endIndex]
-                }
-
-		if let m = self.onMessage {
-
-			let events = records.flatMap(parse(from:))
-			
-			for event in events {
-				DispatchQueue.global(qos: .utility).async {
-					m(e)
-				}
-			}	
-		}
-
+                buffer.append(newData)
             }
+            catch let e {
+                self.onError?(e)
+            }
+            
+            let records: ArraySlice<String>
+            let components = buffer.components(separatedBy: "\n\n")
+            
+            if !buffer.hasSuffix("\n\n") {
+                records = components.dropLast()
+                buffer = components.last!
+            }
+            else {
+                records = components[0..<components.endIndex]
+                buffer = ""
+            }
+            
+            if let m = self.onMessage {
+                
+                let events = records.flatMap(parse(from:))
+                
+                for event in events {
+                    DispatchQueue.global(qos: .utility).async {
+                        m(event)
+                    }
+                }
+            }
+            
         }
     }
-
+    
     private func parse(from record: String) -> Event? {
-	    
-	    var id: String?
-	    var event: String?
-	    var data: String?
-	    
-	    let lines = record.components(separatedBy: .newlines).map({$0.trimmingCharacters(in: .whitespacesAndNewlines)}).filter({$0 != ""})
-
-	    guard lines.count != 0 else {
-		    return nil
-	    }
-
-	    for line in lines {
-		
-		if line.hasPrefix(":") {
-		    continue
-		}
-		
-		if line.hasPrefix("id:") {
-		    id = line[line.index(line.startIndex, offsetBy: 3)..<line.endIndex]
-		    self.lastID = record
-		}
-		
-		if line.hasPrefix("event:") {
-		    event = (event ?? "") + line[line.index(line.startIndex, offsetBy: 6)..<line.endIndex].trimmingCharacters(in: .whitespaces)
-		}
-		
-		if line.hasPrefix("data:") {
-		    data = (data ?? "") + line[record.index(line.startIndex, offsetBy: 5)..<line.endIndex].trimmingCharacters(in: .whitespaces)
-		}
-		
-		if line.hasPrefix("retry:") {
-		    guard let i = Int(line[line.index(line.startIndex, offsetBy: 6)..<line.endIndex].trimmingCharacters(in: .whitespaces)) else {
-			continue
-		    }
-		    self.reconnectTime = .milliseconds(i)
-		}
-	    }
-
-	    return Event(id: id, event: event, data: data)
-	    
+        
+        var id: String?
+        var event: String?
+        var data: String?
+        
+        let lines = record.components(separatedBy: .newlines).map({$0.trimmingCharacters(in: .whitespacesAndNewlines)}).filter({$0 != ""})
+        
+        guard lines.count != 0 else {
+            return nil
+        }
+        
+        for line in lines {
+            
+            if line.hasPrefix(":") {
+                continue
+            }
+            
+            if line.hasPrefix("id:") {
+                id = line[line.index(line.startIndex, offsetBy: 3)..<line.endIndex]
+                self.lastID = record
+            }
+            
+            if line.hasPrefix("event:") {
+                event = (event ?? "") + line[line.index(line.startIndex, offsetBy: 6)..<line.endIndex].trimmingCharacters(in: .whitespaces)
+            }
+            
+            if line.hasPrefix("data:") {
+                data = (data ?? "") + line[record.index(line.startIndex, offsetBy: 5)..<line.endIndex].trimmingCharacters(in: .whitespaces)
+            }
+            
+            if line.hasPrefix("retry:") {
+                guard let i = Int(line[line.index(line.startIndex, offsetBy: 6)..<line.endIndex].trimmingCharacters(in: .whitespaces)) else {
+                    continue
+                }
+                self.reconnectTime = .milliseconds(i)
+            }
+        }
+        
+        if id == nil && event == nil && data == nil {
+            return nil
+        }
+        
+        return Event(id: id, event: event, data: data)
+        
     }
+
 }
